@@ -5,7 +5,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.13
         environment:
           GO111MODULE: "on"
 
@@ -14,5 +14,6 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run: go mod download
+      - run: go get golang.org/x/lint/golint && golint -set_exit_status ./action/
+      - run: test -z $(gofmt -l ./action)
       - run: go test -v ./action

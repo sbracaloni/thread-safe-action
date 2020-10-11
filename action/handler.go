@@ -4,6 +4,14 @@ import (
 	"context"
 )
 
+// ThreadSafeActionHandlerIft interface exposing the 2 main methods
+type ThreadSafeActionHandlerIft interface {
+	// SynchronousActionSend a task to be executed in a thread-safe context
+	SynchronousActionSend(threadSafeTask ThreadSafeTask, args interface{}) (interface{}, error)
+	// AsynchronousActionSend a task to be executed in a thread-safe context
+	AsynchronousActionSend(ctrlThreadSafeFunc ThreadSafeTask, args interface{})
+}
+
 // ThreadSafeTask is executed in a thread safe context
 type ThreadSafeTask func(interface{}) (interface{}, error)
 

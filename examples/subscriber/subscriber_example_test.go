@@ -52,7 +52,6 @@ func Test_shouldBeAbleToSubscribeAndCountSubscriptionConcurrentlyThenDelete(t *t
 
 }
 
-
 func Test_shouldBeAbleToSubscribeAndUnsubscribeConcurrently(t *testing.T) {
 	/*
 		- Start 100 concurrent subscription creations and deletion as soon as it is created

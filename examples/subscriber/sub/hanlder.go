@@ -49,7 +49,7 @@ type newSubscriptionArgs struct {
 func (s *SubscriptionHandlerLockFree) addNewSubscriptionThreadSafe(args interface{}) (interface{}, error) {
 	newSubArgs := args.(newSubscriptionArgs)
 	subByID, exists := s.subsByTheme[newSubArgs.theme]
-	if ! exists {
+	if !exists {
 		subByID = map[SubscriptionID]PersonName{}
 		s.subsByTheme[newSubArgs.theme] = subByID
 	}
@@ -81,7 +81,7 @@ type countSubscriptionArgs struct {
 func (s *SubscriptionHandlerLockFree) countSubscriptionByThemeThreadSafe(args interface{}) (interface{}, error) {
 	countSubArgs := args.(countSubscriptionArgs)
 	subByID, exists := s.subsByTheme[countSubArgs.theme]
-	if ! exists {
+	if !exists {
 		return 0, nil
 	}
 	return len(subByID), nil

@@ -7,6 +7,8 @@ import (
 	"github.com/lithammer/shortuuid/v3"
 	"github.com/sbracaloni/thread-safe-action/action"
 )
+
+// SubscriptionHandler interface
 type SubscriptionHandler interface {
 	AddNewSubscription(theme ActivityTheme, name PersonName) (SubscriptionID, error)
 	CountSubscriptionByTheme(theme ActivityTheme) (int, error)
@@ -14,15 +16,23 @@ type SubscriptionHandler interface {
 	RemoveSubscriptionAsync(theme ActivityTheme, subID SubscriptionID)
 }
 
+// ActivityTheme represents a specific them
 type ActivityTheme string
+
+// PersonName represents a person name
 type PersonName string
+
+// SubscriptionID identifies a subscription
 type SubscriptionID string
+
+// SubscriptionHandlerLockFree allows a user to subscribe/unsubscribe to different theme in a lock free context
 type SubscriptionHandlerLockFree struct {
 	subsByTheme             map[ActivityTheme]map[SubscriptionID]PersonName
 	ctx                     context.Context
 	threadSafeActionHandler *action.ThreadSafeActionHandler
 }
 
+// NewSubscriptionHandlerLockFree initializes a new SubscriptionHandlerLockFree
 func NewSubscriptionHandlerLockFree(ctx context.Context, handler *action.ThreadSafeActionHandler) *SubscriptionHandlerLockFree {
 	return &SubscriptionHandlerLockFree{
 		subsByTheme:             map[ActivityTheme]map[SubscriptionID]PersonName{},
@@ -38,16 +48,17 @@ type newSubscriptionArgs struct {
 
 func (s *SubscriptionHandlerLockFree) addNewSubscriptionThreadSafe(args interface{}) (interface{}, error) {
 	newSubArgs := args.(newSubscriptionArgs)
-	subById, exists := s.subsByTheme[newSubArgs.theme]
+	subByID, exists := s.subsByTheme[newSubArgs.theme]
 	if ! exists {
-		subById = map[SubscriptionID]PersonName{}
-		s.subsByTheme[newSubArgs.theme] = subById
+		subByID = map[SubscriptionID]PersonName{}
+		s.subsByTheme[newSubArgs.theme] = subByID
 	}
 	subID := SubscriptionID(shortuuid.New())
-	subById[subID] = newSubArgs.name
+	subByID[subID] = newSubArgs.name
 	return subID, nil
 }
 
+// AddNewSubscription creates a new subscription to a theme for the given user name
 func (s *SubscriptionHandlerLockFree) AddNewSubscription(theme ActivityTheme, name PersonName) (SubscriptionID, error) {
 	// Update the map in a thread safe environment
 	reply, err := s.threadSafeActionHandler.SynchronousActionSend(s.addNewSubscriptionThreadSafe, newSubscriptionArgs{
@@ -69,12 +80,14 @@ type countSubscriptionArgs struct {
 
 func (s *SubscriptionHandlerLockFree) countSubscriptionByThemeThreadSafe(args interface{}) (interface{}, error) {
 	countSubArgs := args.(countSubscriptionArgs)
-	subById, exists := s.subsByTheme[countSubArgs.theme]
+	subByID, exists := s.subsByTheme[countSubArgs.theme]
 	if ! exists {
 		return 0, nil
 	}
-	return len(subById), nil
+	return len(subByID), nil
 }
+
+// CountSubscriptionByTheme returns the number of subscriptions by theme
 func (s *SubscriptionHandlerLockFree) CountSubscriptionByTheme(theme ActivityTheme) (int, error) {
 	// Update the map in a thread safe environment
 	reply, err := s.threadSafeActionHandler.SynchronousActionSend(s.countSubscriptionByThemeThreadSafe, countSubscriptionArgs{
@@ -95,16 +108,17 @@ type removeSubscriptionArgs struct {
 
 func (s *SubscriptionHandlerLockFree) removeSubscriptionThreadSafe(args interface{}) (interface{}, error) {
 	removeSubArgs := args.(removeSubscriptionArgs)
-	subById, exists := s.subsByTheme[removeSubArgs.theme]
+	subByID, exists := s.subsByTheme[removeSubArgs.theme]
 	if exists {
-		delete(subById, removeSubArgs.subID)
-		if len(subById) == 0 {
+		delete(subByID, removeSubArgs.subID)
+		if len(subByID) == 0 {
 			delete(s.subsByTheme, removeSubArgs.theme)
 		}
 	}
 	return nil, nil
 }
 
+// RemoveSubscriptionSync deletes a the subscription associated to the subID for the given theme
 func (s *SubscriptionHandlerLockFree) RemoveSubscriptionSync(theme ActivityTheme, subID SubscriptionID) error {
 	// Update the map in a thread safe environment
 	_, err := s.threadSafeActionHandler.SynchronousActionSend(s.removeSubscriptionThreadSafe, removeSubscriptionArgs{
@@ -119,6 +133,7 @@ func (s *SubscriptionHandlerLockFree) RemoveSubscriptionSync(theme ActivityTheme
 	return nil
 }
 
+// RemoveSubscriptionAsync sends a delete order to remove a the subscription associated to the subID for the given theme
 func (s *SubscriptionHandlerLockFree) RemoveSubscriptionAsync(theme ActivityTheme, subID SubscriptionID) {
 	// Update the map in a thread safe environment
 	s.threadSafeActionHandler.AsynchronousActionSend(s.removeSubscriptionThreadSafe, removeSubscriptionArgs{

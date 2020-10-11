@@ -16,7 +16,7 @@ type SubscriptionHandler interface {
 	RemoveSubscriptionAsync(theme ActivityTheme, subID SubscriptionID)
 }
 
-// ActivityTheme represents a specific them
+// ActivityTheme represents a specific theme
 type ActivityTheme string
 
 // PersonName represents a person name

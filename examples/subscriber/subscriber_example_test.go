@@ -16,7 +16,7 @@ import (
 func Test_shouldBeAbleToSubscribeAndCountSubscriptionConcurrentlyThenDelete(t *testing.T) {
 	/*
 		- Start 100 concurrent subscription creations
-		- While creating keep asking fot he number of subscriptions by theme (concurrent reads and writes)
+		- While creating keep asking for the number of subscriptions by theme (concurrent reads and writes)
 		- Start 100 concurrent subscription deletions
 
 		The deletion starts only after all the subscriptions are done. the subCreatedChan has a buffer of nbUsers.

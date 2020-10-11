@@ -3,7 +3,8 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  library:
+    name: Action code lint and unit tests
     docker:
       - image: circleci/golang:1.13
         environment:
@@ -14,6 +15,39 @@ jobs:
       - checkout
 
       # specify any bash command here prefixed with `run: `
-      - run: go get golang.org/x/lint/golint && golint -set_exit_status ./action/
-      - run: test -z $(gofmt -l ./action)
-      - run: go test -v ./action
+      - run:
+          name: Lint
+          command: go get golang.org/x/lint/golint && golint -set_exit_status ./action/
+      - run:
+          name: Check Format
+          command: test -z $(gofmt -l ./action)
+      - run:
+          name: Run unit tests
+          command: go test -v ./action
+  examples:
+    name: Examples lint and contract tests
+    docker:
+      - image: circleci/golang:1.13
+        environment:
+          GO111MODULE: "on"
+
+    working_directory: /go/src/github.com/sbracaloni/thread-safe-action
+    steps:
+        - checkout
+
+        # specify any bash command here prefixed with `run: `
+        - run:
+            name: Lint
+            command: go get golang.org/x/lint/golint && golint -set_exit_status ./examples/...
+        - run:
+            name: Check Format
+            command: test -z $(gofmt -l ./examples)
+        - run:
+            name: Run contract tests
+            command: cd ./examples/subscriber && go test . -v
+workflows:
+  version: 2
+  validate:
+    jobs:
+      - library
+      - examples

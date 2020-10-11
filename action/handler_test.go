@@ -15,7 +15,7 @@ import (
 func Test_ShouldExecuteActionFromAnAsynchronousSend(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	defer cancelHandler()
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 
 	passedArgsChan := make(chan interface{})
 
@@ -34,7 +34,7 @@ func Test_ShouldExecuteActionFromAnAsynchronousSend(t *testing.T) {
 func Test_ShouldExecuteActionFromAnAsynchronousSendWithNilArgs(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	defer cancelHandler()
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 	hasBeenCalled := make(chan bool)
 	threadSafeFunc := func(args interface{}) (interface{}, error) {
 		hasBeenCalled <- true
@@ -49,7 +49,7 @@ func Test_ShouldExecuteActionFromASynchronousSend(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	defer cancelHandler()
 
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 
 	type RetValue struct {
 		providedArgs interface{}
@@ -68,7 +68,7 @@ func Test_ShouldExecuteActionFromASynchronousSend(t *testing.T) {
 func Test_ShouldExecuteActionFromASynchronousSendWithNilArgs(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	defer cancelHandler()
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 	type RetValue struct {
 		providedArgs interface{}
 	}
@@ -86,7 +86,7 @@ func Test_ShouldExecuteActionFromASynchronousSendAnReturnError(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	defer cancelHandler()
 
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 
 	errMsg := "something wrong happened"
 	threadSafeFunc := func(args interface{}) (interface{}, error) {
@@ -99,7 +99,7 @@ func Test_ShouldExecuteActionFromASynchronousSendAnReturnError(t *testing.T) {
 
 func Test_ShouldStopTaskExecutionWhenHandlerContextIsCancelledDuringSynchronousSend(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 	done := make(chan bool)
 	threadSafeFunc := func(args interface{}) (interface{}, error) {
 		cancelHandler()
@@ -117,7 +117,7 @@ func Test_ShouldStopTaskExecutionWhenHandlerContextIsCancelledDuringSynchronousS
 
 func Test_ShouldRStopTaskExecutionWhenHandlerContextIsCancelledDuringAsynchronousSend(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
-	actionHandler := action.NewThreadSafeActionHandler(handlerCtx)
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 	done := make(chan bool)
 
 	hasBeenCalled := make(chan bool)

@@ -10,4 +10,6 @@ Users can get the number of subscriptions by `ActivityTheme`.
 
 Users can remove a subscription to an `ActivityTheme` providing their `subscription ID`.
 
-> This is just a runnable example of code not a test
+
+- [Lock free subscribeHandler](sub/handler.go)
+- [Usage/tests](subscriber_example_test.go)

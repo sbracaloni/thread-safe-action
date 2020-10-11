@@ -7,11 +7,11 @@ import (
 // ThreadSafeTask is executed in a thread safe context
 type ThreadSafeTask func(interface{}) (interface{}, error)
 
-
 type controlThreadSafeContext struct {
 	controlFunc ThreadSafeTask
 	args        interface{}
 }
+
 func (c controlThreadSafeContext) execute() (interface{}, error) {
 	return c.controlFunc(c.args)
 }

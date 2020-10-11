@@ -1,17 +1,19 @@
-package main
+package main_test
 
 import (
 	"context"
 	"fmt"
 	"math/rand"
+	"testing"
 	"time"
 
 	"github.com/sbracaloni/thread-safe-action/action"
+	"gotest.tools/assert"
 
 	"subscribers/sub"
 )
 
-func demoConcurrentCreateSubThenConcurrentDeleteSub(subHandler sub.SubscriptionHandler) {
+func Test_shouldBeAbleToSubscribeAndCountSubscriptionConcurrentlyThenDelete(t *testing.T) {
 	/*
 		- Start 100 concurrent subscription creations
 		- While creating keep asking fot he number of subscriptions by theme (concurrent reads and writes)
@@ -19,7 +21,10 @@ func demoConcurrentCreateSubThenConcurrentDeleteSub(subHandler sub.SubscriptionH
 
 		The deletion starts only after all the subscriptions are done. the subCreatedChan has a buffer of nbUsers.
 	*/
-	fmt.Println("Start demo concurrent create and read, then delete all subscriptions")
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+	threadSafeHandler := action.NewThreadSafeActionHandler(ctx)
+	subHandler := sub.NewSubscriptionHandlerLockFree(ctx, threadSafeHandler)
 	nbUsers := 100
 	subCreatedChan := make(chan subCreatedInfo, nbUsers)
 	defer close(subCreatedChan)
@@ -33,22 +38,32 @@ func demoConcurrentCreateSubThenConcurrentDeleteSub(subHandler sub.SubscriptionH
 
 	// get number of subscriptions by theme until all subscriptions are registered - concurrent read and write
 	// from the client point of view
-	getCountUntilAllSubscribed(subHandler, len(randomSubToBeDone))
+	nbSubscriptions, err := getCountUntilAllSubscribed(subHandler, len(randomSubToBeDone))
+	assert.NilError(t, err)
+	assert.Equal(t, nbSubscriptions, nbUsers)
 
 	// run subscription deletion concurrently
 	concurrentDeleteSubscriptions(subHandler, subCreatedChan, nbUsers)
 
 	// get number of subscriptions by theme until all subscriptions are removed
-	getCountUntilAllSubscribed(subHandler, 0)
+	nbSubscriptions, err = getCountUntilAllSubscribed(subHandler, 0)
+	assert.NilError(t, err)
+	assert.Equal(t, nbSubscriptions, 0)
+
 }
 
-func demoConcurrentCreateAndDeleteSub(subHandler sub.SubscriptionHandler) {
+
+func Test_shouldBeAbleToSubscribeAndUnsubscribeConcurrently(t *testing.T) {
 	/*
 		- Start 100 concurrent subscription creations and deletion as soon as it is created
 
 		The subCreatedChan has no buffer and there is no synchronization wait before starting the deletion.
 	*/
-	fmt.Println("Start demo concurrent create and delete subscriptions")
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+	threadSafeHandler := action.NewThreadSafeActionHandler(ctx)
+	subHandler := sub.NewSubscriptionHandlerLockFree(ctx, threadSafeHandler)
+
 	subCreatedChan := make(chan subCreatedInfo)
 	defer close(subCreatedChan)
 	nbUsers := 100
@@ -64,17 +79,10 @@ func demoConcurrentCreateAndDeleteSub(subHandler sub.SubscriptionHandler) {
 	concurrentDeleteSubscriptions(subHandler, subCreatedChan, nbUsers)
 
 	// get number of subscriptions by theme until all subscriptions are removed
-	getCountUntilAllSubscribed(subHandler, 0)
-}
+	nbSubscriptions, err := getCountUntilAllSubscribed(subHandler, 0)
+	assert.NilError(t, err)
+	assert.Equal(t, nbSubscriptions, 0)
 
-
-func main() {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	threadSafeHandler := action.NewThreadSafeActionHandler(ctx)
-	subHandler := sub.NewSubscriptionHandlerLockFree(ctx, threadSafeHandler)
-	demoConcurrentCreateSubThenConcurrentDeleteSub(subHandler)
-	demoConcurrentCreateAndDeleteSub(subHandler)
 }
 
 type subToBeDoneInfo struct {
@@ -114,7 +122,7 @@ func concurrentCreateSubscriptions(subHandler sub.SubscriptionHandler, subs []su
 	}
 }
 
-func getCountUntilAllSubscribed(subHandler sub.SubscriptionHandler, nbExpectedSubscriptions int) {
+func getCountUntilAllSubscribed(subHandler sub.SubscriptionHandler, nbExpectedSubscriptions int) (int, error) {
 	nbSubTotal := -1
 	themeCount := map[sub.ActivityTheme]int{}
 	for nbSubTotal != nbExpectedSubscriptions {
@@ -122,8 +130,10 @@ func getCountUntilAllSubscribed(subHandler sub.SubscriptionHandler, nbExpectedSu
 		for i := 0; i < 3; i++ {
 			theme := sub.ActivityTheme(fmt.Sprintf("theme %d", i))
 			count, err := subHandler.CountSubscriptionByTheme(theme)
+			if err != nil {
+				return nbSubTotal, err
+			}
 			themeCount[theme] = count
-			panicOnError(err)
 			nbSubTotal += count
 		}
 		fmt.Println(fmt.Sprintf("Total subscriptions count: %d", nbSubTotal))
@@ -131,8 +141,8 @@ func getCountUntilAllSubscribed(subHandler sub.SubscriptionHandler, nbExpectedSu
 	fmt.Println(fmt.Sprintf("Total subscriptions count reached: %d/%d", nbSubTotal, nbExpectedSubscriptions))
 	for theme, count := range themeCount {
 		fmt.Println(fmt.Sprintf("Total subscriptions for theme %s: %d", theme, count))
-
 	}
+	return nbSubTotal, nil
 }
 
 func concurrentDeleteSubscriptions(subHandler sub.SubscriptionHandler, subs <-chan subCreatedInfo, nbUsers int) {

@@ -7,7 +7,7 @@ import (
 
 	"gotest.tools/assert"
 
-	"github.com/sbracaloni/thread-safe-action/action"
+	action "github.com/sbracaloni/thread-safe-action"
 )
 
 // Consider using Ginko especially to be able to write parametrized tests

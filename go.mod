@@ -1,6 +1,6 @@
 module github.com/sbracaloni/thread-safe-action
 
-go 1.13
+go 1.15
 
 require (
 	github.com/google/go-cmp v0.5.2 // indirect

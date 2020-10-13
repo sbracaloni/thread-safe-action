@@ -6,7 +6,7 @@ jobs:
   library:
     name: Action code lint and unit tests
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.15
         environment:
           GO111MODULE: "on"
 
@@ -27,7 +27,7 @@ jobs:
   examples:
     name: Examples lint and contract tests
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.15
         environment:
           GO111MODULE: "on"
 

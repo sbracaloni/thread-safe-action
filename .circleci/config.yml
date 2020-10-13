@@ -17,13 +17,13 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run:
           name: Lint
-          command: go get golang.org/x/lint/golint && golint -set_exit_status ./action/
+          command: go get golang.org/x/lint/golint && golint -set_exit_status ./...
       - run:
           name: Check Format
-          command: test -z $(gofmt -l ./action)
+          command: test -z $(gofmt -l .)
       - run:
           name: Run unit tests
-          command: go test -v ./action
+          command: go test -v ./...
   examples:
     name: Examples lint and contract tests
     docker:

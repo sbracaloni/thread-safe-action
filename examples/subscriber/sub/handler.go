@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/lithammer/shortuuid/v3"
-	"github.com/sbracaloni/thread-safe-action/action"
+
+	action "github.com/sbracaloni/thread-safe-action"
 )
 
 // SubscriptionHandler interface

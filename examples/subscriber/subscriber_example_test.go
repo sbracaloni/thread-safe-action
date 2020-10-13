@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sbracaloni/thread-safe-action/action"
+	action "github.com/sbracaloni/thread-safe-action"
 	"gotest.tools/assert"
 
 	"subscribers/sub"

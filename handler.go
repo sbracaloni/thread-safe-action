@@ -73,6 +73,15 @@ func (h *ThreadSafeActionHandler) handleSyncReply(ctrl *ctrlAction, err error, r
 	}
 }
 
+func (h *ThreadSafeActionHandler) sendAction(action *ctrlAction) error {
+	select {
+	case <-h.ctx.Done():
+		return h.ctx.Err()
+	case h.ctrlChannel <- action:
+	}
+	return nil
+}
+
 // SynchronousActionSend sends an action to the thread-safe action handler in a synchronous way.
 // Returns the thread safe task result
 func (h *ThreadSafeActionHandler) SynchronousActionSend(threadSafeTask ThreadSafeTask, args interface{}) (interface{}, error) {
@@ -105,7 +114,7 @@ func (h *ThreadSafeActionHandler) SynchronousActionSend(threadSafeTask ThreadSaf
 				received = true
 			case err = <-errChan:
 			case <-send:
-				h.ctrlChannel <- ctrlAction
+				err = h.sendAction(ctrlAction)
 			}
 		}
 		chanDone <- true
@@ -117,11 +126,12 @@ func (h *ThreadSafeActionHandler) SynchronousActionSend(threadSafeTask ThreadSaf
 
 // AsynchronousActionSend sends an action to the thread-safe action handler in an asynchronous way.
 func (h *ThreadSafeActionHandler) AsynchronousActionSend(ctrlThreadSafeFunc ThreadSafeTask, args interface{}) {
-	h.ctrlChannel <- &ctrlAction{
+	action := &ctrlAction{
 		sync: false,
 		ctrlThreadSafeCtx: controlThreadSafeContext{
 			controlFunc: ctrlThreadSafeFunc,
 			args:        args,
 		},
 	}
+	_ = h.sendAction(action)
 }

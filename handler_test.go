@@ -115,7 +115,7 @@ func Test_ShouldStopTaskExecutionWhenHandlerContextIsCancelledDuringSynchronousS
 	done <- true
 }
 
-func Test_ShouldRStopTaskExecutionWhenHandlerContextIsCancelledDuringAsynchronousSend(t *testing.T) {
+func Test_ShouldStopTaskExecutionWhenHandlerContextIsCancelledDuringAsynchronousSend(t *testing.T) {
 	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
 	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
 	done := make(chan bool)
@@ -130,5 +130,65 @@ func Test_ShouldRStopTaskExecutionWhenHandlerContextIsCancelledDuringAsynchronou
 	actionHandler.AsynchronousActionSend(threadSafeFunc, nil)
 	<-hasBeenCalled
 	cancelHandler()
+	done <- true
+}
+
+func Test_ShouldReturnErrorForAllTheWaitingSynchronousTaskIfTheContextIsCanceled(t *testing.T) {
+	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
+	handlerCtx.Done()
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
+	done := make(chan bool)
+
+	nbConc := 100
+	allCanceled := make(chan bool, nbConc)
+	hasBeenCalled := make(chan bool)
+	threadSafeFunc := func(args interface{}) (interface{}, error) {
+		hasBeenCalled <- true
+		<-done
+		return nil, nil
+	}
+	doNothingTask := func(args interface{}) (interface{}, error) {
+		return nil, nil
+	}
+
+	actionHandler.AsynchronousActionSend(threadSafeFunc, nil)
+	<-hasBeenCalled
+	for i := 0; i < nbConc; i++ {
+		go func() {
+			// Those actions will wait to send on the control channel. They should be canceled if the context is done
+			// (even if they are already waiting in the queue)
+			_, err := actionHandler.SynchronousActionSend(doNothingTask, nil)
+			assert.Error(t, err, "context canceled")
+			allCanceled <- true
+		}()
+	}
+	cancelHandler()
+	done <- true
+	for i := 0; i < nbConc; i++ {
+		<-allCanceled
+	}
+}
+
+func Test_ShouldDiscardSendForAllTheWaitingAsynchronousTaskIfTheContextIsCanceled(t *testing.T) {
+	handlerCtx, cancelHandler := context.WithCancel(context.TODO())
+	handlerCtx.Done()
+	var actionHandler action.ThreadSafeActionHandlerIft = action.NewThreadSafeActionHandler(handlerCtx)
+	done := make(chan bool)
+
+	hasBeenCalled := make(chan bool)
+	threadSafeFunc := func(args interface{}) (interface{}, error) {
+		hasBeenCalled <- true
+		<-done
+		return nil, nil
+	}
+	panicTask := func(args interface{}) (interface{}, error) {
+		panic("Should not be triggered")
+		return nil, nil
+	}
+	actionHandler.AsynchronousActionSend(threadSafeFunc, nil)
+	<-hasBeenCalled
+	cancelHandler()
+	// This task should not be sent an return immediately
+	actionHandler.AsynchronousActionSend(panicTask, nil)
 	done <- true
 }

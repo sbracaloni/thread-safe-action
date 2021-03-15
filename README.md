@@ -1,7 +1,7 @@
 Thread Safe Action Handler
 ==========================
 
-Why deal with locks when you can have a lock free implementation.
+Why deal with your own locks when you can use the builtin Golang mechanism.
 
 The locks can be useful sometimes and not that bad for a simple problem but they can become a real nightmare 
 for more complex implementations.
